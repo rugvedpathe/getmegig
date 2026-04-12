@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { uid, compressImage, ytEmbedUrl } from '../utils';
+import { uid, compressImage } from '../utils';
 import { C } from '../data/defaults';
 import { showToast } from '../components/Toast';
 import PortfolioFeed from '../components/PortfolioFeed';
