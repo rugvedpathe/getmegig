@@ -1,5 +1,6 @@
 import { C } from '../data/defaults';
 import PortfolioFeed from './PortfolioFeed';
+import { StarDisplay } from './StarRating';
 
 export default function ArtistModal({ artist, onClose }) {
   if (!artist) return null;
@@ -25,6 +26,7 @@ export default function ArtistModal({ artist, onClose }) {
                 {a.genre} · {a.city} · {a.members === '1' ? 'Solo' : a.members + '-piece band'}
               </div>
               {a.exp && <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{a.exp} yrs gigging</div>}
+              {a.avgRating > 0 && <div style={{ marginTop: 6 }}><StarDisplay rating={a.avgRating} /></div>}
               {a.instruments && (
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
                   {a.instruments.split(',').map((t, i) => (

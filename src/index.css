@@ -159,3 +159,48 @@ h1{font-family:'DM Serif Display',serif;}
 /* in modal - full height */
 .modal-feed-wrap{width:100%;height:60vh;min-height:380px;max-height:560px;border-radius:16px;overflow:hidden;margin-bottom:4px;}
 .modal-feed-wrap .feed-root{height:100%;max-height:100%;border-radius:0;}
+
+/* ══════════════════════════════════════════════════
+   GIG CONFIRMATION FLOW + RATINGS + VENUE SEARCH
+══════════════════════════════════════════════════ */
+/* Status badges */
+.status-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.3px;}
+.status-pending{background:#f0f0f0;color:#888;}
+.status-shortlisted{background:#EEF4FD;color:#185FA5;}
+.status-confirmed{background:#E1F5EE;color:#1D9E75;}
+.status-rejected{background:#fdf0f0;color:#c0392b;}
+
+/* Star rating */
+.star-row{display:flex;gap:4px;align-items:center;}
+.star{font-size:22px;cursor:pointer;transition:transform .1s;line-height:1;}
+.star:hover{transform:scale(1.2);}
+.star-sm{font-size:14px;}
+
+/* Venue search */
+.search-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.search-input{flex:1;min-width:160px;}
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.filter-chip{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:#aaa;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;}
+.filter-chip.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.filter-chip.active-teal{background:var(--teal);color:#fff;border-color:var(--teal);}
+
+/* Confirmation card */
+.confirm-card{background:linear-gradient(135deg,rgba(29,158,117,.06),rgba(24,95,165,.04));border:1px solid rgba(29,158,117,.2);border-radius:12px;padding:1rem;margin-bottom:10px;}
+.confirm-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+
+/* Rating modal */
+.rating-modal{background:#fff;border-radius:16px;padding:2rem;width:92%;max-width:400px;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.15);}
+.rating-stars{display:flex;gap:8px;justify-content:center;margin:16px 0;}
+.rating-star{font-size:36px;cursor:pointer;transition:transform .15s;}
+.rating-star:hover,.rating-star.active{transform:scale(1.15);}
+
+/* Cloudinary upload */
+.upload-area{border:2px dashed var(--border);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;}
+.upload-area:hover{border-color:var(--teal);background:rgba(29,158,117,.03);}
+.upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-progress{height:4px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden;}
+.upload-progress-bar{height:100%;background:var(--teal);border-radius:2px;transition:width .3s;}
+.uploaded-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.uploaded-thumb{position:relative;width:72px;height:56px;border-radius:8px;overflow:hidden;background:#111;}
+.uploaded-thumb img{width:100%;height:100%;object-fit:cover;}
+.uploaded-thumb-remove{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;}

@@ -3,16 +3,14 @@ import { uid, compressImage } from '../utils';
 import { C } from '../data/defaults';
 import { showToast } from '../components/Toast';
 import PortfolioFeed from '../components/PortfolioFeed';
+import { StarDisplay } from '../components/StarRating';
 
 async function callAI(prompt) {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
     });
     const d = await res.json();
     return d.content?.[0]?.text || '';
@@ -63,7 +61,7 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
   }
 
   function deleteArtistProfile() {
-    if (!window.confirm('Delete your artist profile? All your portfolio, photos and applications will be permanently removed. This cannot be undone.')) return;
+    if (!window.confirm('Delete your artist profile? All your portfolio, photos and applications will be permanently removed.')) return;
     setArtists(artists.filter(a => a.id !== curArtist.id));
     setCurArtist(null);
     setAppliedGigs({});
@@ -94,7 +92,7 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
     const updated = { ...curArtist, portfolio: (curArtist.portfolio||[]).filter(p => p.id !== item.id) };
     setCurArtist(updated);
     setArtists(artists.map(a => a.id === updated.id ? updated : a));
-    showToast('Removed from portfolio');
+    showToast('Removed');
   }
 
   async function addPhoto() {
@@ -125,7 +123,7 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
 
   const myApps = applications.filter(a => curArtist && a.artistId === curArtist.id);
 
-  // ── REGISTRATION FORM ───────────────────────────────────────────
+  // ── REGISTRATION FORM ──────────────────────────────────────────
   if (!curArtist) return (
     <div className="page" style={{ maxWidth: 520 }}>
       <div className="label label-teal" style={{ marginBottom: 12 }}>ARTIST REGISTRATION</div>
@@ -147,13 +145,11 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
         <input placeholder="YouTube / SoundCloud / Spotify link" value={form.yt} onChange={e=>sf('yt',e.target.value)} />
         <input placeholder="Contact number (shared only with confirmed venues)" value={form.phone} onChange={e=>sf('phone',e.target.value)} />
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 500 }}>Artist Bio</span>
-            <button className="btn btn-teal btn-sm" onClick={genBio} disabled={bioLoading}>
-              {bioLoading ? 'Generating...' : 'Generate with AI ↗'}
-            </button>
+          <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8 }}>
+            <span style={{ fontSize:13,fontWeight:500 }}>Artist Bio</span>
+            <button className="btn btn-teal btn-sm" onClick={genBio} disabled={bioLoading}>{bioLoading?'Generating...':'Generate with AI ↗'}</button>
           </div>
-          <textarea placeholder="Click generate or write your own..." value={form.bio} onChange={e=>sf('bio',e.target.value)} style={{ minHeight: 90, lineHeight: 1.7 }} />
+          <textarea placeholder="Click generate or write your own..." value={form.bio} onChange={e=>sf('bio',e.target.value)} style={{ minHeight:90,lineHeight:1.7 }} />
         </div>
         <button className="btn btn-teal" onClick={registerArtist}>Create profile & start applying →</button>
       </div>
@@ -162,14 +158,13 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
 
   const a = curArtist;
   const totalMedia = (a.portfolio||[]).length + (a.photos||[]).length;
+  const reviews = a.reviews || [];
 
   return (
     <div className="page">
       <div className="tab-bar">
-        {[['profile','Profile'],['portfolio','Portfolio'],['applications','Applications']].map(([k,l]) => (
-          <button key={k} className={`tab-btn${tab===k?' active':''}`} onClick={() => setTab(k)}>
-            {l}{k==='portfolio' && totalMedia > 0 ? ` (${totalMedia})` : ''}
-          </button>
+        {[['profile','Profile'],['portfolio',`Portfolio${totalMedia>0?` (${totalMedia})`:'`'}`],['applications','Applications']].map(([k,l]) => (
+          <button key={k} className={`tab-btn${tab===k?' active':''}`} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
 
@@ -178,7 +173,7 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
         <div style={{ maxWidth: 520 }}>
           {editing ? (
             <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
-              <div className="label label-teal" style={{ marginBottom: 4 }}>EDIT PROFILE</div>
+              <div className="label label-teal" style={{ marginBottom:4 }}>EDIT PROFILE</div>
               {[['name','Artist / Band name'],['genre','Genre'],['city','City'],['members','Members'],['instruments','Instruments'],['exp','Years gigging'],['vibe','Vibe in 3 words'],['instagram','Instagram'],['yt','YouTube / SoundCloud'],['phone','Phone']].map(([k,ph]) => (
                 <input key={k} placeholder={ph} value={editForm[k]||''} onChange={e=>setEditForm(p=>({...p,[k]:e.target.value}))} />
               ))}
@@ -197,6 +192,7 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
                     <div style={{ fontSize:20,fontWeight:500,marginBottom:4 }}>{a.name}</div>
                     <div style={{ fontSize:13,color:'#666' }}>{a.genre} · {a.city} · {a.members==='1'?'Solo artist':a.members+'-piece band'}</div>
                     {a.exp && <div style={{ fontSize:12,color:'#aaa',marginTop:2 }}>{a.exp} years gigging</div>}
+                    {a.avgRating > 0 && <div style={{ marginTop:6 }}><StarDisplay rating={a.avgRating} /></div>}
                     {a.instruments && (
                       <div style={{ display:'flex',gap:6,flexWrap:'wrap',marginTop:8 }}>
                         {a.instruments.split(',').map((t,i) => <span key={i} className="tag tag-gray">{t.trim()}</span>)}
@@ -210,20 +206,44 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
                   {a.yt && <span style={{ fontSize:12,color:C.teal }}>▶ Music link added</span>}
                 </div>
               </div>
-              <div className="flex-row" style={{ marginBottom:16 }}>
+
+              <div className="flex-row" style={{ marginBottom:20 }}>
                 <button className="btn btn-teal" style={{ flex:1 }} onClick={() => setPage('browse')}>Browse gigs</button>
                 <button className="btn btn-outline" onClick={() => { setEditForm({...a}); setEditing(true); }}>Edit Profile</button>
               </div>
 
-              {/* ── DELETE PROFILE ── */}
+              {/* ── VENUE RATINGS ── */}
+              {reviews.length > 0 && (
+                <div style={{ marginBottom:20 }}>
+                  <div className="section-title">RATINGS FROM VENUES</div>
+                  <div style={{ display:'flex',alignItems:'center',gap:16,padding:'14px 16px',background:C.tealL,borderRadius:12,border:`1px solid rgba(29,158,117,.2)`,marginBottom:12 }}>
+                    <div style={{ fontSize:36,fontWeight:700,color:C.teal,lineHeight:1 }}>{a.avgRating?.toFixed(1)}</div>
+                    <div>
+                      <StarDisplay rating={a.avgRating||0} size="lg" />
+                      <div style={{ fontSize:11,color:'#888',marginTop:4 }}>{reviews.length} review{reviews.length!==1?'s':''} from venues</div>
+                    </div>
+                  </div>
+                  {reviews.slice().reverse().map((r,i) => (
+                    <div key={i} className="card" style={{ marginBottom:8,padding:'12px 14px' }}>
+                      <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4 }}>
+                        <div style={{ fontWeight:500,fontSize:13 }}>{r.venue}</div>
+                        <StarDisplay rating={r.rating} />
+                      </div>
+                      {r.gig && <div style={{ fontSize:11,color:'#aaa',marginBottom:4 }}>📅 {r.gig}</div>}
+                      {r.comment && <p style={{ fontSize:13,color:'#666',lineHeight:1.5 }}>{r.comment}</p>}
+                      <div style={{ fontSize:11,color:'#bbb',marginTop:4 }}>{r.date}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── DANGER ZONE ── */}
               <div className="danger-zone">
                 <div className="danger-zone-title">⚠ DANGER ZONE</div>
                 <p style={{ fontSize:12,color:'#888',marginBottom:10,lineHeight:1.5 }}>
-                  Deleting your artist profile is permanent and cannot be undone. Your portfolio, photos, and all applications will be lost.
+                  Deleting your artist profile is permanent. Your portfolio, photos, and all applications will be lost.
                 </p>
-                <button className="btn btn-red btn-sm" onClick={deleteArtistProfile}>
-                  Delete my artist profile
-                </button>
+                <button className="btn btn-red btn-sm" onClick={deleteArtistProfile}>Delete my artist profile</button>
               </div>
             </>
           )}
@@ -236,19 +256,14 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
           <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6 }}>
             <div className="label label-teal">MY PORTFOLIO</div>
             <div style={{ display:'flex',gap:8 }}>
-              <button className="btn btn-teal btn-sm" onClick={() => { setShowAddVideo(v=>!v); setShowAddPhoto(false); }}>
-                + Video
-              </button>
-              <button className="btn btn-outline btn-sm" onClick={() => { setShowAddPhoto(v=>!v); setShowAddVideo(false); }}>
-                + Photo
-              </button>
+              <button className="btn btn-teal btn-sm" onClick={() => { setShowAddVideo(v=>!v); setShowAddPhoto(false); }}>+ Video</button>
+              <button className="btn btn-outline btn-sm" onClick={() => { setShowAddPhoto(v=>!v); setShowAddVideo(false); }}>+ Photo</button>
             </div>
           </div>
           <p style={{ fontSize:12,color:'#aaa',marginBottom:16,lineHeight:1.5 }}>
-            Scroll up & down through your videos and photos. Venues see this board when reviewing your application.
+            Scroll up & down through your videos and photos. Venues see this when reviewing your application.
           </p>
 
-          {/* Add video form */}
           {showAddVideo && (
             <div className="card" style={{ marginBottom:16 }}>
               <div style={{ fontSize:13,fontWeight:500,marginBottom:12 }}>🎬 Add a video or track</div>
@@ -260,7 +275,7 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
                 </div>
                 {portTab==='link'
                   ? <input placeholder="YouTube / SoundCloud / Instagram link *" value={portForm.url} onChange={e=>setPortForm(p=>({...p,url:e.target.value}))} />
-                  : <><input type="file" accept="video/*" ref={portFileRef} /><div className="session-warn">⚠️ Uploaded files are session-only — use YouTube links for a permanent portfolio.</div></>
+                  : <><input type="file" accept="video/*" ref={portFileRef} /><div className="session-warn">⚠️ Uploaded files are session-only — use YouTube links for permanent videos.</div></>
                 }
                 <input placeholder="Short description (optional)" value={portForm.desc} onChange={e=>setPortForm(p=>({...p,desc:e.target.value}))} />
                 <div className="flex-row">
@@ -271,7 +286,6 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
             </div>
           )}
 
-          {/* Add photo form */}
           {showAddPhoto && (
             <div className="card" style={{ marginBottom:16 }}>
               <div style={{ fontSize:13,fontWeight:500,marginBottom:12 }}>🖼️ Add a photo</div>
@@ -293,10 +307,9 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
             </div>
           )}
 
-          {/* The Hinge-style feed */}
           <PortfolioFeed
-            portfolio={a.portfolio || []}
-            photos={a.photos || []}
+            portfolio={a.portfolio||[]}
+            photos={a.photos||[]}
             isOwner={true}
             onDeleteVideo={deletePortfolioItem}
             onDeletePhoto={deletePhoto}
@@ -314,11 +327,29 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
             </div>
           ) : myApps.map(app => {
             const g = gigs.find(x => x.id === app.gigId);
+            const status = app.status || 'pending';
             return (
-              <div key={app.id} className="card" style={{ marginBottom:12 }}>
-                <div style={{ fontWeight:500,fontSize:14,marginBottom:4 }}>{g?g.name:'Unknown gig'}</div>
-                {g && <div style={{ fontSize:12,color:'#888',marginBottom:8 }}>{g.city} · {g.night} · {g.pay}</div>}
+              <div key={app.id} className="card" style={{ marginBottom:12, borderLeft:`3px solid ${status==='confirmed'?C.teal:status==='shortlisted'?C.blue:status==='rejected'?'#c0392b':status==='completed'?'#27ae60':'#e8e8e8'}` }}>
+                <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8,marginBottom:8 }}>
+                  <div>
+                    <div style={{ fontWeight:500,fontSize:14 }}>{g?g.name:'Unknown gig'}</div>
+                    {g && <div style={{ fontSize:12,color:'#888',marginTop:2 }}>{g.city} · {g.night} · {g.pay}</div>}
+                  </div>
+                  <span className={`status-badge status-${status==='completed'?'confirmed':status}`}>
+                    {status==='pending'?'⏳ Pending':status==='shortlisted'?'⭐ Shortlisted':status==='confirmed'?'✅ Confirmed':status==='rejected'?'✕ Declined':'🎉 Completed'}
+                  </span>
+                </div>
                 <p style={{ fontSize:13,color:'#666',lineHeight:1.6,background:'#f8f8f8',padding:'10px 12px',borderRadius:8 }}>{app.pitch}</p>
+                {status==='confirmed' && (
+                  <div style={{ marginTop:8,fontSize:12,color:C.teal,background:C.tealL,padding:'8px 12px',borderRadius:8 }}>
+                    🎉 You're confirmed! The venue will contact you soon.
+                  </div>
+                )}
+                {status==='shortlisted' && (
+                  <div style={{ marginTop:8,fontSize:12,color:C.blue,background:C.blueL,padding:'8px 12px',borderRadius:8 }}>
+                    ⭐ You've been shortlisted! The venue is considering you.
+                  </div>
+                )}
                 <div style={{ marginTop:8,fontSize:11,color:'#bbb' }}>Sent {app.sent}</div>
               </div>
             );

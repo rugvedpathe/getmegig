@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { ytEmbedUrl, getYtThumbnail } from '../utils';
-
+import { C } from '../data/defaults';
 
 // ── Single full-screen card in the feed ────────────────────────────
 function FeedCard({ item, isActive }) {
