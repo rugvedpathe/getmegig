@@ -8,22 +8,28 @@ import HomePage from './pages/HomePage';
 import BrowsePage from './pages/BrowsePage';
 import CommunityPage from './pages/CommunityPage';
 import ArtistPage from './pages/ArtistPage';
-import VenuePage from './pages/VenuePage';
-import VenueSearchPage from './pages/VenueSearchPage';
 import SponsorPage from './pages/SponsorPage';
 import DeckPage from './pages/DeckPage';
 import ArtistModal from './components/ArtistModal';
-import VenueModal from './components/VenueModal';
 import ApplyModal from './components/ApplyModal';
+
+// Nav: removed 'venues' page and 'venue' (My Venue) — kept sponsor + deck
+const NAV = [
+  ['home',     'Home'],
+  ['browse',   'Gigs'],
+  ['community','Scene'],
+  ['artist',   null],   // label set dynamically
+  ['sponsor',  'Sponsor'],
+  ['deck',     'Pitch Deck'],
+];
 
 export default function App() {
   const [curPage, setCurPage] = useState('home');
-  const { toast, showToast } = useToast();
+  const { toast, showToast }  = useToast();
   const state = useAppState();
 
   const [artistModal, setArtistModal] = useState(null);
-  const [venueModal, setVenueModal] = useState(null);
-  const [applyGig, setApplyGig] = useState(null);
+  const [applyGig,    setApplyGig]    = useState(null);
 
   function setPage(p) {
     setCurPage(p);
@@ -33,10 +39,6 @@ export default function App() {
   function openArtistModal(id) {
     const a = state.artists.find(x => x.id === id);
     if (a) setArtistModal(a);
-  }
-  function openVenueModal(id) {
-    const v = state.venues.find(x => x.id === id);
-    if (v) setVenueModal(v);
   }
 
   function openApply(gigId) {
@@ -60,54 +62,49 @@ export default function App() {
 
   const gigForApply = applyGig ? state.gigs.find(g => g.id === applyGig) : null;
 
-  const nav = [
-    ['home','Home'],['browse','Gigs'],['community','Scene'],
-    ['venues','Venues'],
-    ['artist', state.curArtist ? 'My Artist' : 'Artist'],
-    ['venue', state.curVenue ? 'My Venue' : 'Venue'],
-    ['sponsor','Sponsor'],['deck','Pitch Deck']
-  ];
+  const navItems = NAV.map(([p, l]) => [
+    p,
+    p === 'artist' ? (state.curArtist ? 'My Artist' : 'Artist') : l
+  ]);
 
   return (
     <>
       <Toast toast={toast} />
       <div className="app-scroll">
         <nav>
-          <div className="nav-logo" onClick={() => setPage('home')}>getme<span>gig</span><span style={{fontSize:11}}>.co.in</span></div>
+          <div className="nav-logo" onClick={() => setPage('home')}>
+            getme<span>gig</span><span style={{ fontSize: 11 }}>.co.in</span>
+          </div>
           <div className="nav-links">
-            {nav.map(([p,l]) => (
-              <button key={p} className={`nav-btn${p===curPage?' active':''}`} onClick={() => setPage(p)}>{l.toUpperCase()}</button>
+            {navItems.map(([p, l]) => (
+              <button key={p} className={`nav-btn${p === curPage ? ' active' : ''}`} onClick={() => setPage(p)}>
+                {l.toUpperCase()}
+              </button>
             ))}
           </div>
         </nav>
 
         <div id="content">
-          {curPage==='home' && <HomePage gigs={state.gigs} artists={state.artists} appliedGigs={state.appliedGigs} setPage={setPage} onApply={openApply} onOpenArtist={openArtistModal}/>}
-          {curPage==='browse' && <BrowsePage gigs={state.gigs} appliedGigs={state.appliedGigs} onApply={openApply} onOpenVenue={openVenueModal}/>}
-          {curPage==='community' && <CommunityPage artists={state.artists} venues={state.venues} setPage={setPage} onOpenArtist={openArtistModal} onOpenVenue={openVenueModal}/>}
-          {curPage==='venues' && <VenueSearchPage venues={state.venues} setPage={setPage} onOpenVenue={openVenueModal}/>}
-          {curPage==='artist' && (
-            <ArtistPage curArtist={state.curArtist} setCurArtist={state.setCurArtist}
-              artists={state.artists} setArtists={state.setArtists}
-              gigs={state.gigs} applications={state.applications} setApplications={state.setApplications}
-              appliedGigs={state.appliedGigs} setAppliedGigs={state.setAppliedGigs} setPage={setPage}/>
-          )}
-          {curPage==='venue' && (
-            <VenuePage curVenue={state.curVenue} setCurVenue={state.setCurVenue}
-              venues={state.venues} setVenues={state.setVenues}
-              gigs={state.gigs} setGigs={state.setGigs}
+          {curPage === 'home'      && <HomePage gigs={state.gigs} artists={state.artists} appliedGigs={state.appliedGigs} setPage={setPage} onApply={openApply} onOpenArtist={openArtistModal} />}
+          {curPage === 'browse'    && <BrowsePage gigs={state.gigs} appliedGigs={state.appliedGigs} onApply={openApply} />}
+          {curPage === 'community' && <CommunityPage artists={state.artists} setPage={setPage} onOpenArtist={openArtistModal} />}
+          {curPage === 'artist'    && (
+            <ArtistPage
+              curArtist={state.curArtist} setCurArtist={state.setCurArtist}
+              artists={state.artists}     setArtists={state.setArtists}
+              gigs={state.gigs}
               applications={state.applications} setApplications={state.setApplications}
-              artists={state.artists} setArtists={state.setArtists}
-              setPage={setPage}/>
+              appliedGigs={state.appliedGigs}   setAppliedGigs={state.setAppliedGigs}
+              setPage={setPage}
+            />
           )}
-          {curPage==='sponsor' && <SponsorPage gigs={state.gigs} setGigs={state.setGigs}/>}
-          {curPage==='deck' && <DeckPage/>}
+          {curPage === 'sponsor'   && <SponsorPage gigs={state.gigs} setGigs={state.setGigs} />}
+          {curPage === 'deck'      && <DeckPage />}
         </div>
       </div>
 
-      {artistModal && <ArtistModal artist={artistModal} onClose={() => setArtistModal(null)}/>}
-      {venueModal && <VenueModal venue={venueModal} onClose={() => setVenueModal(null)}/>}
-      {applyGig && <ApplyModal gig={gigForApply} artist={state.curArtist} onSubmit={submitApp} onClose={() => setApplyGig(null)}/>}
+      {artistModal && <ArtistModal artist={artistModal} onClose={() => setArtistModal(null)} />}
+      {applyGig    && <ApplyModal  gig={gigForApply}  artist={state.curArtist} onSubmit={submitApp} onClose={() => setApplyGig(null)} />}
     </>
   );
 }

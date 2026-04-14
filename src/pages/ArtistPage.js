@@ -4,6 +4,7 @@ import { C } from '../data/defaults';
 import { showToast } from '../components/Toast';
 import PortfolioFeed from '../components/PortfolioFeed';
 import { StarDisplay } from '../components/StarRating';
+import { uploadToCloudinary, isCloudinaryConfigured } from '../cloudinary';
 
 async function callAI(prompt) {
   try {
@@ -30,6 +31,10 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
   const [showAddPhoto, setShowAddPhoto] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
+  // Upload progress state
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const portFileRef = useRef();
   const photoFileRef = useRef();
 
@@ -69,23 +74,52 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
     showToast('Artist profile deleted');
   }
 
+  // ── ADD PORTFOLIO VIDEO ──────────────────────────────────────────
   async function addPortfolioItem() {
     if (!portForm.title) { showToast('Add a title', true); return; }
     let item = { id: uid(), title: portForm.title, desc: portForm.desc };
+
     if (portTab === 'link') {
       if (!portForm.url) { showToast('Add a URL', true); return; }
-      item.url = portForm.url; item.isFile = false;
+      item.url = portForm.url;
+      item.isFile = false;
     } else {
       const file = portFileRef.current?.files?.[0];
       if (!file) { showToast('Choose a file', true); return; }
-      item.isFile = true; item.fileName = file.name; item.url = URL.createObjectURL(file);
+
+      if (isCloudinaryConfigured()) {
+        // ── Cloudinary upload ──────────────────────────────────────
+        setVideoUploading(true);
+        setVideoProgress(0);
+        try {
+          const result = await uploadToCloudinary(file, pct => setVideoProgress(pct));
+          item.url = result.url;           // permanent Cloudinary URL
+          item.thumbnail = result.thumbnail;
+          item.isFile = false;             // treat as URL — survives refresh
+          item.isCloudinary = true;
+        } catch (err) {
+          showToast('Upload failed — ' + err.message, true);
+          setVideoUploading(false);
+          return;
+        }
+        setVideoUploading(false);
+        setVideoProgress(0);
+      } else {
+        // ── Fallback: object URL (session-only) ────────────────────
+        item.isFile = true;
+        item.fileName = file.name;
+        item.url = URL.createObjectURL(file);
+        showToast('⚠️ Video is session-only. Set up Cloudinary env vars for permanent uploads.');
+      }
     }
+
     const updated = { ...curArtist, portfolio: [...(curArtist.portfolio||[]), item] };
     setCurArtist(updated);
     setArtists(artists.map(a => a.id === updated.id ? updated : a));
     setPortForm({ title:'',url:'',desc:'' });
+    if (portFileRef.current) portFileRef.current.value = '';
     setShowAddVideo(false);
-    showToast('Video added to portfolio');
+    showToast(item.isCloudinary ? 'Video uploaded to cloud ✓' : 'Video added to portfolio');
   }
 
   function deletePortfolioItem(item) {
@@ -95,23 +129,46 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
     showToast('Removed');
   }
 
+  // ── ADD PHOTO ────────────────────────────────────────────────────
   async function addPhoto() {
     let src = '';
+    let isCloudinary = false;
+
     if (aphotoTab === 'file') {
       const file = photoFileRef.current?.files?.[0];
       if (!file) { showToast('Choose a photo', true); return; }
-      src = await compressImage(file);
+
+      if (isCloudinaryConfigured()) {
+        // ── Cloudinary upload ──────────────────────────────────────
+        setPhotoUploading(true);
+        try {
+          const result = await uploadToCloudinary(file, () => {});
+          src = result.url;
+          isCloudinary = true;
+        } catch (err) {
+          showToast('Upload failed — ' + err.message, true);
+          setPhotoUploading(false);
+          return;
+        }
+        setPhotoUploading(false);
+      } else {
+        // ── Fallback: base64 compressed ────────────────────────────
+        src = await compressImage(file);
+      }
     } else {
       if (!photoUrl) { showToast('Enter an image URL', true); return; }
       src = photoUrl;
     }
+
     const photo = { src, caption: photoCaption };
     const updated = { ...curArtist, photos: [...(curArtist.photos||[]), photo] };
     setCurArtist(updated);
     setArtists(artists.map(a => a.id === updated.id ? updated : a));
-    setPhotoCaption(''); setPhotoUrl('');
+    setPhotoCaption('');
+    setPhotoUrl('');
+    if (photoFileRef.current) photoFileRef.current.value = '';
     setShowAddPhoto(false);
-    showToast('Photo added');
+    showToast(isCloudinary ? 'Photo uploaded to cloud ✓' : 'Photo added');
   }
 
   function deletePhoto(item) {
@@ -123,12 +180,12 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
 
   const myApps = applications.filter(a => curArtist && a.artistId === curArtist.id);
 
-  // ── REGISTRATION FORM ──────────────────────────────────────────
+  // ── REGISTRATION FORM ────────────────────────────────────────────
   if (!curArtist) return (
     <div className="page" style={{ maxWidth: 520 }}>
       <div className="label label-teal" style={{ marginBottom: 12 }}>ARTIST REGISTRATION</div>
       <h2 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 6px' }}>Create your profile</h2>
-      <p style={{ fontSize: 13, color: '#888', marginBottom: 24, lineHeight: 1.6 }}>Always free. AI writes your bio. Build a portfolio. Venues screen you. You get paid.</p>
+      <p style={{ fontSize: 13, color: '#888', marginBottom: 24, lineHeight: 1.6 }}>Always free. AI writes your bio. Build a portfolio. Get paid.</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <input placeholder="Artist / Band name *" value={form.name} onChange={e=>sf('name',e.target.value)} />
         <input placeholder="Genre (e.g. Indie Folk, Jazz, Metal) *" value={form.genre} onChange={e=>sf('genre',e.target.value)} />
@@ -212,7 +269,6 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
                 <button className="btn btn-outline" onClick={() => { setEditForm({...a}); setEditing(true); }}>Edit Profile</button>
               </div>
 
-              {/* ── VENUE RATINGS ── */}
               {reviews.length > 0 && (
                 <div style={{ marginBottom:20 }}>
                   <div className="section-title">RATINGS FROM VENUES</div>
@@ -237,7 +293,6 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
                 </div>
               )}
 
-              {/* ── DANGER ZONE ── */}
               <div className="danger-zone">
                 <div className="danger-zone-title">⚠ DANGER ZONE</div>
                 <p style={{ fontSize:12,color:'#888',marginBottom:10,lineHeight:1.5 }}>
@@ -264,6 +319,7 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
             Scroll up & down through your videos and photos. Venues see this when reviewing your application.
           </p>
 
+          {/* ── Add Video Form ── */}
           {showAddVideo && (
             <div className="card" style={{ marginBottom:16 }}>
               <div style={{ fontSize:13,fontWeight:500,marginBottom:12 }}>🎬 Add a video or track</div>
@@ -275,17 +331,36 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
                 </div>
                 {portTab==='link'
                   ? <input placeholder="YouTube / SoundCloud / Instagram link *" value={portForm.url} onChange={e=>setPortForm(p=>({...p,url:e.target.value}))} />
-                  : <><input type="file" accept="video/*" ref={portFileRef} /><div className="session-warn">⚠️ Uploaded files are session-only — use YouTube links for permanent videos.</div></>
+                  : <>
+                      <input type="file" accept="video/*" ref={portFileRef} />
+                      {isCloudinaryConfigured()
+                        ? <div style={{ fontSize:11,color:'var(--teal)',background:'var(--tealL)',padding:'6px 10px',borderRadius:6,border:'1px solid rgba(29,158,117,.2)' }}>
+                            ☁️ Will be uploaded to Cloudinary — permanent & playable
+                          </div>
+                        : <div className="session-warn">⚠️ No Cloudinary set up — video is session-only. Set REACT_APP_CLOUDINARY_CLOUD_NAME env var.</div>
+                      }
+                      {videoUploading && (
+                        <div>
+                          <div style={{ fontSize:12,color:'#888',marginBottom:4 }}>Uploading... {videoProgress}%</div>
+                          <div style={{ height:6,background:'#eee',borderRadius:4,overflow:'hidden' }}>
+                            <div style={{ height:'100%',width:`${videoProgress}%`,background:'var(--teal)',transition:'width .2s' }} />
+                          </div>
+                        </div>
+                      )}
+                    </>
                 }
                 <input placeholder="Short description (optional)" value={portForm.desc} onChange={e=>setPortForm(p=>({...p,desc:e.target.value}))} />
                 <div className="flex-row">
-                  <button className="btn btn-teal" style={{ flex:1,padding:10 }} onClick={addPortfolioItem}>Add to portfolio</button>
+                  <button className="btn btn-teal" style={{ flex:1,padding:10 }} onClick={addPortfolioItem} disabled={videoUploading}>
+                    {videoUploading ? `Uploading ${videoProgress}%...` : 'Add to portfolio'}
+                  </button>
                   <button className="btn btn-outline btn-sm" onClick={() => setShowAddVideo(false)}>Cancel</button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* ── Add Photo Form ── */}
           {showAddPhoto && (
             <div className="card" style={{ marginBottom:16 }}>
               <div style={{ fontSize:13,fontWeight:500,marginBottom:12 }}>🖼️ Add a photo</div>
@@ -295,12 +370,21 @@ export default function ArtistPage({ curArtist, setCurArtist, artists, setArtist
                   <button className={`upload-toggle-btn ${aphotoTab==='url'?'active-teal':'inactive'}`} onClick={()=>setAphotoTab('url')}>🔗 Image URL</button>
                 </div>
                 {aphotoTab==='file'
-                  ? <input type="file" accept="image/*" ref={photoFileRef} />
+                  ? <>
+                      <input type="file" accept="image/*" ref={photoFileRef} />
+                      {isCloudinaryConfigured() && (
+                        <div style={{ fontSize:11,color:'var(--teal)',background:'var(--tealL)',padding:'6px 10px',borderRadius:6,border:'1px solid rgba(29,158,117,.2)' }}>
+                          ☁️ Will be uploaded to Cloudinary permanently
+                        </div>
+                      )}
+                    </>
                   : <input placeholder="Direct image URL" value={photoUrl} onChange={e=>setPhotoUrl(e.target.value)} />
                 }
                 <input placeholder="Caption (optional)" value={photoCaption} onChange={e=>setPhotoCaption(e.target.value)} />
                 <div className="flex-row">
-                  <button className="btn btn-teal" style={{ flex:1,padding:10 }} onClick={addPhoto}>Add photo</button>
+                  <button className="btn btn-teal" style={{ flex:1,padding:10 }} onClick={addPhoto} disabled={photoUploading}>
+                    {photoUploading ? 'Uploading...' : 'Add photo'}
+                  </button>
                   <button className="btn btn-outline btn-sm" onClick={() => setShowAddPhoto(false)}>Cancel</button>
                 </div>
               </div>
