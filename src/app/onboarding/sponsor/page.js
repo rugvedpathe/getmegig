@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 const BRAND_TYPES = ['Beverage', 'Clothing/Streetwear', 'Tattoo/Art', 'Food', 'Tech/Gadgets', 'Lifestyle', 'Music/Vinyl', 'Other'];
 const SPONSORSHIP_OPTIONS = [
@@ -128,11 +127,19 @@ export default function SponsorProfileSetup() {
     );
   }
 
+  async function goBackToRoles() {
+    try {
+      await fetch('/api/clear-role', { method: 'POST' });
+      await user.reload();
+      router.push('/onboarding');
+    } catch { router.push('/onboarding'); }
+  }
+
   return (
     <div className="profile-setup-page">
       <div className="profile-setup-container">
         <div className="profile-setup-header">
-          <Link href="/onboarding" className="back-to-roles">← Back to role selection</Link>
+          <button type="button" onClick={goBackToRoles} className="back-to-roles">← Back to role selection</button>
           <span className="profile-setup-step">Step 2 of 2</span>
           <h1 className="profile-setup-title">Set up your brand</h1>
           <p className="profile-setup-subtitle">

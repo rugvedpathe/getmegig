@@ -12,10 +12,14 @@ export default function DashboardRouter() {
     if (!isLoaded) return;
 
     const role = user?.publicMetadata?.role;
+    const profileComplete = user?.publicMetadata?.profileComplete;
 
     if (!role) {
-      // User hasn't completed onboarding
+      // No role selected yet — go to role selection
       router.push('/onboarding');
+    } else if (!profileComplete) {
+      // Role selected but profile form not submitted — go to profile form
+      router.push(`/onboarding/${role}`);
     } else if (role === 'artist') {
       router.push('/dashboard/artist');
     } else if (role === 'venue') {
@@ -23,7 +27,6 @@ export default function DashboardRouter() {
     } else if (role === 'sponsor') {
       router.push('/dashboard/sponsor');
     } else {
-      // Unknown role, send to onboarding
       router.push('/onboarding');
     }
   }, [isLoaded, user, router]);

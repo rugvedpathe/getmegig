@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 const GENRES = ['Rock', 'Jazz', 'Classical', 'Bollywood', 'Folk', 'EDM', 'Metal', 'House', 'DJ', 'Stand-up Comedy', 'Improv', 'Hip-Hop', 'Acoustic', 'Sufi', 'Indie', 'Other'];
 const ACT_TYPES = ['Solo', 'Duo', 'Band', 'DJ', 'Comedy', 'Spoken Word', 'Other'];
@@ -146,11 +145,19 @@ export default function ArtistProfileSetup() {
     return (<div className="onboarding-page"><div className="onboarding-spinner" /></div>);
   }
 
+  async function goBackToRoles() {
+    try {
+      await fetch('/api/clear-role', { method: 'POST' });
+      await user.reload();
+      router.push('/onboarding');
+    } catch { router.push('/onboarding'); }
+  }
+
   return (
     <div className="profile-setup-page">
       <div className="profile-setup-container" style={{ maxWidth: 640 }}>
         <div className="profile-setup-header">
-          <Link href="/onboarding" className="back-to-roles">← Back to role selection</Link>
+          <button type="button" onClick={goBackToRoles} className="back-to-roles">← Back to role selection</button>
           <span className="profile-setup-step">Step 2 of 2</span>
           <h1 className="profile-setup-title">Set up your artist profile</h1>
           <p className="profile-setup-subtitle">
