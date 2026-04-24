@@ -20,7 +20,7 @@ export default function RootLayout({ children }) {
         <ClerkProvider>
           <nav className="gmg-nav">
             <Link href="/" className="nav-logo">
-              getme<span>gig</span><span style={{ fontSize: 11 }}>.co.in</span>
+              getmea<span>gig</span><span style={{ fontSize: 11 }}>.co.in</span>
             </Link>
             <div className="nav-links">
               <Show when="signed-out">
