@@ -1,7 +1,7 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-const VALID_ROLES = ['artist', 'venue'];
+const VALID_ROLES = ['artist', 'venue', 'sponsor'];
 
 export async function POST(req) {
   try {
@@ -16,7 +16,7 @@ export async function POST(req) {
 
     if (!role || !VALID_ROLES.includes(role)) {
       return NextResponse.json(
-        { error: 'Invalid role. Must be "artist" or "venue".' },
+        { error: 'Invalid role. Must be "artist", "venue", or "sponsor".' },
         { status: 400 }
       );
     }
@@ -26,7 +26,6 @@ export async function POST(req) {
     await client.users.updateUserMetadata(userId, {
       publicMetadata: {
         role,
-        onboardingComplete: true,
       },
     });
 

@@ -9,9 +9,10 @@ export async function GET(req) {
     const city = searchParams.get('city');
     const budgetMin = searchParams.get('budgetMin');
     const dateFrom = searchParams.get('dateFrom');
+    const status = searchParams.get('status');
 
     const db = await getDb();
-    const filter = { status: 'active' };
+    const filter = { status: status || 'active' };
 
     if (genre && genre !== 'All') filter.genre = genre;
     if (city) filter.venueCity = { $regex: city, $options: 'i' };

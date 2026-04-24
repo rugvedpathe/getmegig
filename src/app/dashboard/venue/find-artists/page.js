@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-const GENRES = ['All', 'Rock', 'Jazz', 'Classical', 'Bollywood', 'Folk', 'EDM', 'Acoustic', 'Hip-Hop'];
+const GENRES = ['All', 'Rock', 'Jazz', 'Classical', 'Bollywood', 'Folk', 'EDM', 'Metal', 'House', 'DJ', 'Stand-up Comedy', 'Improv', 'Hip-Hop', 'Acoustic', 'Sufi', 'Indie'];
 
 export default function FindArtistsPage() {
   const { user, isLoaded } = useUser();
@@ -127,9 +127,21 @@ export default function FindArtistsPage() {
                   <div className="artist-card-name">{artist.fullName}</div>
                   <div className="artist-card-meta">
                     {artist.genre && <span className="tag tag-teal">{artist.genre}</span>}
+                    {artist.actType && <span className="tag tag-gray">{artist.actType}{artist.actType === 'Band' && artist.bandSize ? ` (${artist.bandSize}p)` : ''}</span>}
                     {artist.city && <span className="artist-card-city">📍 {artist.city}</span>}
                   </div>
                 </div>
+              </div>
+
+              {/* Rating */}
+              <div className="artist-card-rating">
+                {'⭐'.repeat(Math.round(artist.rating || 0))}{'☆'.repeat(5 - Math.round(artist.rating || 0))}
+                <span style={{ marginLeft: 6, fontSize: 12, color: '#888' }}>
+                  {artist.rating ? `${artist.rating}/5` : 'New'}{artist.totalRatings ? ` (${artist.totalRatings})` : ''}
+                </span>
+                {artist.gigsCompleted > 0 && (
+                  <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--teal)' }}>🎵 {artist.gigsCompleted} gigs</span>
+                )}
               </div>
 
               {artist.priceRange && (
@@ -171,9 +183,12 @@ export default function FindArtistsPage() {
                     <button className="invite-dropdown-close" onClick={() => setInviteGigId(null)}>Cancel</button>
                   </div>
                 ) : (
-                  <button className="btn btn-outline btn-sm" onClick={() => setInviteGigId(artist.clerkUserId)}>
-                    📩 Invite to Gig
-                  </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Link href={`/artists/${artist.clerkUserId}`} className="btn btn-outline btn-sm">👤 View Profile</Link>
+                    <button className="btn btn-outline btn-sm" onClick={() => setInviteGigId(artist.clerkUserId)}>
+                      📩 Invite to Gig
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

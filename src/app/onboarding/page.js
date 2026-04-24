@@ -11,8 +11,8 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // If user already has a role, redirect to dashboard
-  if (isLoaded && user?.publicMetadata?.role) {
+  // If user already completed their profile, redirect to dashboard
+  if (isLoaded && user?.publicMetadata?.profileComplete) {
     router.push('/dashboard');
     return null;
   }
@@ -63,7 +63,7 @@ export default function OnboardingPage() {
         Tell us who you are so we can set up the perfect experience for you.
       </p>
 
-      <div className="role-cards">
+      <div className="role-cards role-cards-3">
         <div
           className={`role-card role-card-artist ${selectedRole === 'artist' ? 'selected-artist' : ''}`}
           onClick={() => setSelectedRole('artist')}
@@ -85,6 +85,17 @@ export default function OnboardingPage() {
             Post gigs, screen artists, fill your stage with the best talent in your city.
           </div>
         </div>
+
+        <div
+          className={`role-card role-card-sponsor ${selectedRole === 'sponsor' ? 'selected-sponsor' : ''}`}
+          onClick={() => setSelectedRole('sponsor')}
+        >
+          <span className="role-emoji">🏷️</span>
+          <div className="role-label">I&apos;m a Sponsor / Brand</div>
+          <div className="role-desc">
+            Set up stalls, sponsor events, reach the right crowd at live gigs.
+          </div>
+        </div>
       </div>
 
       <button
@@ -93,6 +104,8 @@ export default function OnboardingPage() {
             ? 'onboarding-btn-artist'
             : selectedRole === 'venue'
             ? 'onboarding-btn-venue'
+            : selectedRole === 'sponsor'
+            ? 'onboarding-btn-sponsor'
             : ''
         }`}
         disabled={!selectedRole || loading}

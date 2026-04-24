@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-const GENRES = ['All', 'Rock', 'Jazz', 'Classical', 'Bollywood', 'Folk', 'EDM', 'Acoustic', 'Hip-Hop', 'Any'];
+const GENRES = ['All', 'Rock', 'Jazz', 'Classical', 'Bollywood', 'Folk', 'EDM', 'Metal', 'House', 'DJ', 'Stand-up Comedy', 'Improv', 'Hip-Hop', 'Acoustic', 'Sufi', 'Indie', 'Any'];
 
 export default function BrowseGigsPage() {
   const { user, isLoaded } = useUser();

@@ -20,6 +20,8 @@ export default function DashboardRouter() {
       router.push('/dashboard/artist');
     } else if (role === 'venue') {
       router.push('/dashboard/venue');
+    } else if (role === 'sponsor') {
+      router.push('/dashboard/sponsor');
     } else {
       // Unknown role, send to onboarding
       router.push('/onboarding');

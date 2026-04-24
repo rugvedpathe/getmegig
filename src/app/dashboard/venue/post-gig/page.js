@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
-const GENRES = ['Rock', 'Jazz', 'Classical', 'Bollywood', 'Folk', 'EDM', 'Acoustic', 'Hip-Hop', 'Any'];
+const GENRES = ['Rock', 'Jazz', 'Classical', 'Bollywood', 'Folk', 'EDM', 'Metal', 'House', 'DJ', 'Stand-up Comedy', 'Improv', 'Hip-Hop', 'Acoustic', 'Sufi', 'Indie', 'Any'];
 
 export default function PostGigPage() {
   const { user, isLoaded } = useUser();

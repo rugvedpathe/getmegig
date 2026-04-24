@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 
@@ -10,9 +10,25 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { venueName, city, venueType, capacity, contactPerson } = body;
+    const {
+      // Basic info
+      venueName, city, venueType, capacity, contactPerson,
+      // New: Identity & Media
+      venueDescription, address, googleMapsLink,
+      venuePhotos, instagramHandle, websiteUrl, operatingHours,
+      // New: Stage & Sound
+      stageType, stageDimensions, soundSystem, soundSystemDetails,
+      hasBackline, backlineDetails, lightingSetup, lightingDetails,
+      microphoneCount, monitorCount,
+      // New: Logistics
+      parkingAvailable, greenRoomAvailable, loadInAccess,
+      soundCheckPolicy, paymentTerms, cancellationPolicy,
+      ageRestriction, dresscode, foodDrinkForArtists,
+      // New: Preferences
+      preferredGenres, pastArtists, averageBudget,
+    } = body;
 
-    // Validation
+    // Validation — only name, city, type required
     if (!venueName || !city || !venueType) {
       return NextResponse.json(
         { error: 'Venue name, city, and venue type are required.' },
@@ -20,50 +36,76 @@ export async function POST(req) {
       );
     }
 
-    const validTypes = ['Bar', 'Cafe', 'Restaurant', 'Event Space', 'Club', 'Other'];
-    if (!validTypes.includes(venueType)) {
-      return NextResponse.json(
-        { error: 'Invalid venue type.' },
-        { status: 400 }
-      );
-    }
-
     const db = await getDb();
 
-    // Check if venue profile already exists for this user
-    const existing = await db.collection('venues').findOne({ clerkUserId: userId });
-    if (existing) {
-      // Update existing profile
-      await db.collection('venues').updateOne(
-        { clerkUserId: userId },
-        {
-          $set: {
-            venueName,
-            city,
-            venueType,
-            capacity: capacity ? parseInt(capacity, 10) : null,
-            contactPerson: contactPerson || '',
-            updatedAt: new Date(),
-          },
-        }
-      );
-      return NextResponse.json({ success: true, updated: true });
-    }
-
-    // Create new venue profile — every new venue gets 3 free gig credits
-    const venue = {
-      clerkUserId: userId,
+    // Build profile data
+    const profileData = {
       venueName,
       city,
       venueType,
       capacity: capacity ? parseInt(capacity, 10) : null,
       contactPerson: contactPerson || '',
-      freeGigsRemaining: 3,
-      createdAt: new Date(),
+      // Identity & Media
+      venueDescription: venueDescription || '',
+      address: address || '',
+      googleMapsLink: googleMapsLink || '',
+      venuePhotos: Array.isArray(venuePhotos) ? venuePhotos.slice(0, 8) : [],
+      instagramHandle: instagramHandle || '',
+      websiteUrl: websiteUrl || '',
+      operatingHours: operatingHours || '',
+      // Stage & Sound
+      stageType: stageType || '',
+      stageDimensions: stageDimensions || '',
+      soundSystem: soundSystem || '',
+      soundSystemDetails: soundSystemDetails || '',
+      hasBackline: !!hasBackline,
+      backlineDetails: backlineDetails || '',
+      lightingSetup: lightingSetup || '',
+      lightingDetails: lightingDetails || '',
+      microphoneCount: parseInt(microphoneCount, 10) || 0,
+      monitorCount: parseInt(monitorCount, 10) || 0,
+      // Logistics
+      parkingAvailable: !!parkingAvailable,
+      greenRoomAvailable: !!greenRoomAvailable,
+      loadInAccess: loadInAccess || '',
+      soundCheckPolicy: soundCheckPolicy || '',
+      paymentTerms: paymentTerms || 'Same Day',
+      cancellationPolicy: cancellationPolicy || '',
+      ageRestriction: ageRestriction || 'All Ages',
+      dresscode: dresscode || '',
+      foodDrinkForArtists: !!foodDrinkForArtists,
+      // Preferences
+      preferredGenres: Array.isArray(preferredGenres) ? preferredGenres : [],
+      pastArtists: Array.isArray(pastArtists) ? pastArtists : [],
+      averageBudget: averageBudget || '',
       updatedAt: new Date(),
     };
 
+    // Check if venue already exists
+    const existing = await db.collection('venues').findOne({ clerkUserId: userId });
+    if (existing) {
+      await db.collection('venues').updateOne(
+        { clerkUserId: userId },
+        { $set: profileData }
+      );
+      return NextResponse.json({ success: true, updated: true });
+    }
+
+    // Create new — every new venue gets 3 free gig credits
+    const venue = {
+      clerkUserId: userId,
+      ...profileData,
+      freeGigsRemaining: 3,
+      createdAt: new Date(),
+    };
+
     await db.collection('venues').insertOne(venue);
+
+    // Mark profile as complete in Clerk metadata
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: { role: 'venue', profileComplete: true },
+    });
 
     return NextResponse.json({ success: true, venue });
   } catch (error) {

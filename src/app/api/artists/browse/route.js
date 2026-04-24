@@ -20,16 +20,17 @@ export async function GET(req) {
       .find(filter)
       .project({
         clerkUserId: 1,
-        fullName: 1,
-        genre: 1,
-        city: 1,
-        priceRange: 1,
-        bio: 1,
-        socialLink: 1,
-        photoUrl: 1,
-        // Exclude email, phone — privacy
+        fullName: 1, stageName: 1,
+        genre: 1, city: 1, priceRange: 1,
+        bio: 1, socialLink: 1, photoUrl: 1,
+        // New fields for richer cards
+        actType: 1, bandSize: 1, instruments: 1,
+        instagramHandle: 1,
+        rating: 1, totalRatings: 1, gigsCompleted: 1,
+        languages: 1, performanceStyles: 1,
+        // Exclude email, phone, tech rider — privacy / detail page only
       })
-      .sort({ createdAt: -1 })
+      .sort({ rating: -1, createdAt: -1 })
       .toArray();
 
     return NextResponse.json({ artists });
